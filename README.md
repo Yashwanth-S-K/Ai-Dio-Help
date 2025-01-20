@@ -68,7 +68,7 @@ This solution can be used in various applications such as:
 
 ### Installation
 
-#### 1. Clone the repository
+#### How to run
 
 ```bash
 git clone https://github.com/Yashwanth-S-K/MindHackers-50-SUSTAIN-AI-THON.git
