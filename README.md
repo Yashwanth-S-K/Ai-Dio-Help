@@ -1,4 +1,11 @@
 # Ai-Dio-Help
+
+Team->
+Yashwanth S K
+Harshil Bisarya
+team 50
+
+
 # Audio Emotion Analyzer with AI-based Therapeutic Responses
 
 This project leverages AI models to analyze emotions from audio input and provide therapeutic responses, similar to interactions with a therapist. It integrates emotion recognition from speech with empathetic, AI-driven responses, designed to offer support and emotional insights to users.
