@@ -73,3 +73,10 @@ This solution can be used in various applications such as:
 ```bash
 git clone https://github.com/Yashwanth-S-K/MindHackers-50-SUSTAIN-AI-THON.git
 cd MindHackers-50-SUSTAIN-AI-THON
+#in terminal 1
+node server.js 
+
+#in terminal 2 ~ assuming you have the models
+python model-services.py
+python audio_processor.py
+
