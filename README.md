@@ -71,5 +71,5 @@ This solution can be used in various applications such as:
 #### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/audio-emotion-analyzer.git
-cd audio-emotion-analyzer
+git clone https://github.com/Yashwanth-S-K/MindHackers-50-SUSTAIN-AI-THON.git
+cd MindHackers-50-SUSTAIN-AI-THON
