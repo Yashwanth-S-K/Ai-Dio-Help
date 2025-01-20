@@ -1,12 +1,9 @@
-# audio_processor.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-import librosa
-import numpy as np
-from datetime import datetime
-import soundfile as sf
+import requests
 import logging
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,88 +17,76 @@ UPLOAD_FOLDER = 'processed_audio'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-def process_audio(file_path):
-    """
-    Process the audio file and extract features
-    """
-    try:
-        # Load the audio file
-        y, sr = librosa.load(file_path)
-        
-        # Extract features
-        # 1. Duration
-        duration = librosa.get_duration(y=y, sr=sr)
-        
-        # 2. Tempo
-        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
-        
-        # 3. Average volume (RMS Energy)
-        rms = librosa.feature.rms(y=y)
-        average_volume = float(np.mean(rms))
-        
-        # 4. Pitch
-        pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
-        pitch_mean = float(np.mean(pitches[magnitudes > np.max(magnitudes)/2]))
-        
-        # 5. Spectral Features
-        spectral_centroids = librosa.feature.spectral_centroid(y=y, sr=sr)
-        spectral_mean = float(np.mean(spectral_centroids))
-        
-        return {
-            'duration': round(duration, 2),
-            'tempo': round(float(tempo), 2),
-            'average_volume': round(average_volume, 4),
-            'average_pitch': round(pitch_mean, 2),
-            'spectral_centroid': round(spectral_mean, 2),
-            'sample_rate': sr,
-            'processed_timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-    
-    except Exception as e:
-        logger.error(f"Error processing audio: {str(e)}")
-        raise
+# URLs of the models running in the background
+EMOTION_RECOGNIZER_URL = "http://localhost:5001/analyze"
+THERAPEUTIC_RESPONSE_URL = "http://localhost:5002/generate"
+
 
 @app.route('/process-audio', methods=['POST'])
 def process_audio_file():
     try:
         if 'audio' not in request.files:
             return jsonify({'error': 'No audio file provided'}), 400
-        
+
         file = request.files['audio']
-        
+
         if file.filename == '':
             return jsonify({'error': 'No selected file'}), 400
-        
+
         # Save the uploaded file
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"audio_{timestamp}.wav"
         file_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(file_path)
-        
-        logger.info(f"Processing file: {filename}")
-        
-        # Process the audio file
-        results = process_audio(file_path)
-        
-        # Add file information to results
-        results['filename'] = filename
-        results['file_path'] = file_path
-        
+
+        logger.info(f"Uploaded file saved: {filename}")
+
+        # Send the file to the emotion recognition model
+        with open(file_path, 'rb') as audio_file:
+            emotion_response = requests.post(
+                EMOTION_RECOGNIZER_URL, files={'audio': audio_file}
+            )
+            if emotion_response.status_code != 200:
+                logger.error(f"Emotion recognition failed: {emotion_response.json()}")
+                return jsonify({'error': 'Emotion recognition failed'}), 500
+
+            emotion_data = emotion_response.json()
+
+        # Extract the detected emotion
+        emotion = emotion_data.get('emotion')
+        if not emotion:
+            logger.error("No emotion detected in the response")
+            return jsonify({'error': 'No emotion detected'}), 500
+
+        logger.info(f"Emotion detected: {emotion}")
+
+        # Send the detected emotion to the therapeutic response model
+        therapeutic_response = requests.post(
+            THERAPEUTIC_RESPONSE_URL, json={'message': f"I've been feeling {emotion} lately"}
+        )
+        if therapeutic_response.status_code != 200:
+            logger.error(f"Therapeutic response generation failed: {therapeutic_response.json()}")
+            return jsonify({'error': 'Therapeutic response generation failed'}), 500
+
+        therapeutic_data = therapeutic_response.json()
+
         # Clean up the file after processing
         os.remove(file_path)
-        
+
+        # Return the final result
         return jsonify({
             'success': True,
-            'message': 'Audio processed successfully',
-            'analysis': results
+            'emotion': emotion_data,
+            'therapeutic_response': therapeutic_data
         })
-    
+
     except Exception as e:
         logger.error(f"Error in process_audio_file: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
