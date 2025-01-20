@@ -40,7 +40,7 @@ The system analyzes audio files to detect the emotional state of the speaker and
   - **Soundfile** (for saving and handling audio files)
   
 - **Machine Learning Models**:
-  - **Speech Emotion Recognition (SER)**: Hugging Face `wav2vec2` fine-tuned models on emotion datasets (RAVDESS, IEMOCAP)
+  - **Speech Emotion Recognition (SER)**: fine-tuned model on emotion datasets (RAVDESS, IEMOCAP)
   - **Therapeutic AI**: Fine-tuned Llama 2/3 models for generating therapeutic, empathetic responses
 
 - **Deployment**: Local environment or cloud-based deployment for production use.
